@@ -8,23 +8,23 @@
 body {
   margin: 0;
   padding: 0;
-  background: #05050f;
+  background: #f7f7f5;
   overflow: hidden;
 }
 
 input::placeholder {
-  color: rgba(255, 255, 255, 0.3);
+  color: rgba(0, 0, 0, 0.28);
 }
 
 input:focus, select:focus {
   outline: none;
-  border-color: rgba(124, 58, 237, 0.6) !important;
-  box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.15);
+  border-color: rgba(0, 0, 0, 0.3) !important;
+  box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.06);
 }
 
 select option {
-  background: #12121f;
-  color: #fff;
+  background: #ffffff;
+  color: #111;
 }
 
 ::-webkit-scrollbar {
@@ -34,6 +34,6 @@ select option {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(124, 58, 237, 0.4);
+  background: rgba(0, 0, 0, 0.15);
   border-radius: 4px;
 }
