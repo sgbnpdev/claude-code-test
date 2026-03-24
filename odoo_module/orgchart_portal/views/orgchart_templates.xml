@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+  <template id="orgchart_page" name="Org Chart">
+    <t t-call="website.layout">
+      <t t-set="title">Org Chart</t>
+      <t t-set="no_header" t-value="True"/>
+      <t t-set="no_footer" t-value="True"/>
+
+      <!-- Inline page — full viewport, no Odoo header/footer chrome -->
+      <div id="orgchart-root">
+
+        <!-- 3D graph canvas fills the left side -->
+        <div id="graph-container">
+
+          <!-- Header pill -->
+          <div id="orgchart-header">
+            <div class="oc-logo-pill">
+              <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                <circle cx="9" cy="9"  r="1.5" fill="#111"/>
+                <circle cx="9" cy="3"  r="1.5" fill="#111"/>
+                <circle cx="9" cy="15" r="1.5" fill="#111"/>
+                <circle cx="3" cy="9"  r="1.5" fill="#111"/>
+                <circle cx="15" cy="9" r="1.5" fill="#111"/>
+                <line x1="9" y1="3" x2="9" y2="15" stroke="#111" stroke-width="0.8"/>
+                <line x1="3" y1="9" x2="15" y2="9" stroke="#111" stroke-width="0.8"/>
+              </svg>
+              <span>OrgChart</span>
+            </div>
+            <span class="oc-meta">
+              <span id="people-count"><t t-out="people_count"/></span> people ·
+              <span id="teams-count"><t t-out="len(teams)"/></span> teams
+            </span>
+            <button id="sidebar-toggle" class="oc-btn-pill">Edit Chart</button>
+          </div>
+
+          <!-- Team legend -->
+          <div id="team-legend">
+            <div class="legend-label">Teams</div>
+            <t t-foreach="teams" t-as="team">
+              <div class="legend-item">
+                <span class="legend-dot" t-att-data-team="team"></span>
+                <span t-out="team"/>
+              </div>
+            </t>
+          </div>
+        </div>
+
+        <!-- Sidebar -->
+        <div id="orgchart-sidebar" class="open">
+          <div class="sidebar-head">
+            <div class="sidebar-title">Add Person</div>
+            <div class="sidebar-sub">Build your organization chart</div>
+          </div>
+
+          <div class="sidebar-form">
+            <input id="inp-name"  type="text" placeholder="Full name"/>
+            <input id="inp-title" type="text" placeholder="Job title"/>
+            <input id="inp-team"  type="text" placeholder="Team / Department" list="team-datalist"/>
+            <datalist id="team-datalist"/>
+            <select id="inp-manager">
+              <option value="">No manager (top level)</option>
+            </select>
+            <button id="btn-add" class="oc-btn-dark">+ Add to Chart</button>
+          </div>
+
+          <div class="sidebar-divider"/>
+
+          <div class="sidebar-list">
+            <div class="list-label">People (<span id="list-count"><t t-out="people_count"/></span>)</div>
+            <div id="people-list"/>
+          </div>
+        </div>
+
+      </div><!-- #orgchart-root -->
+
+      <!-- Vendor scripts via CDN (loaded in <head> equivalent at end of body) -->
+      <script src="https://unpkg.com/three@0.158.0/build/three.min.js"/>
+      <script src="https://unpkg.com/three-spritetext@1.9.1/dist/three-spritetext.min.js"/>
+      <script src="https://unpkg.com/3d-force-graph@1.73.0/dist/3d-force-graph.min.js"/>
+
+      <!-- Module initialisation — graph data embedded server-side -->
+      <script type="text/javascript">
+        window.__ORGCHART_DATA__ = <t t-out="graph_data_json"/>;
+      </script>
+      <script type="text/javascript" src="/orgchart_portal/static/src/js/orgchart.js"/>
+    </t>
+  </template>
+
+</odoo>

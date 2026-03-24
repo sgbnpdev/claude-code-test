@@ -1,0 +1,272 @@
+/* ── Layout ─────────────────────────────────────────────── */
+#orgchart-root {
+  display: flex;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  background: #f7f7f5;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+#graph-container {
+  position: relative;
+  flex: 1;
+}
+
+/* ── Header pill ────────────────────────────────────────── */
+#orgchart-header {
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 22px 28px;
+  pointer-events: none;
+  background: linear-gradient(180deg, rgba(247,247,245,0.95) 0%, transparent 100%);
+  z-index: 10;
+}
+
+.oc-logo-pill {
+  background: rgba(0,0,0,0.08);
+  border-radius: 40px;
+  padding: 6px 18px;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #111;
+  letter-spacing: 0.02em;
+}
+
+.oc-meta {
+  font-size: 12px;
+  color: rgba(0,0,0,0.35);
+  flex: 1;
+}
+
+.oc-btn-pill {
+  pointer-events: all;
+  cursor: pointer;
+  background: rgba(0,0,0,0.06);
+  border: 1px solid rgba(0,0,0,0.1);
+  color: #333;
+  border-radius: 20px;
+  padding: 7px 16px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  backdrop-filter: blur(10px);
+  transition: opacity 0.15s;
+}
+.oc-btn-pill:hover { opacity: 0.7; }
+
+/* ── Team legend ────────────────────────────────────────── */
+#team-legend {
+  position: absolute;
+  bottom: 24px; left: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  background: rgba(255,255,255,0.88);
+  border-radius: 14px;
+  padding: 14px 18px;
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(0,0,0,0.07);
+  z-index: 10;
+}
+
+.legend-label {
+  font-size: 10px;
+  font-weight: 700;
+  color: rgba(0,0,0,0.3);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin-bottom: 3px;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: rgba(0,0,0,0.65);
+  font-weight: 500;
+}
+
+.legend-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #333;
+  flex-shrink: 0;
+}
+
+/* ── Sidebar ────────────────────────────────────────────── */
+#orgchart-sidebar {
+  width: 0;
+  height: 100vh;
+  overflow: hidden;
+  background: rgba(255,255,255,0.97);
+  border-left: 1px solid rgba(0,0,0,0.07);
+  backdrop-filter: blur(20px);
+  display: flex;
+  flex-direction: column;
+  transition: width 0.25s ease;
+  font-family: inherit;
+}
+
+#orgchart-sidebar.open {
+  width: 340px;
+  overflow-y: auto;
+}
+
+.sidebar-head {
+  padding: 28px 24px 0;
+}
+
+.sidebar-title {
+  font-size: 17px;
+  font-weight: 700;
+  color: #111;
+}
+
+.sidebar-sub {
+  font-size: 12px;
+  color: rgba(0,0,0,0.35);
+  margin-top: 4px;
+}
+
+.sidebar-form {
+  padding: 20px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.sidebar-form input,
+.sidebar-form select {
+  background: rgba(0,0,0,0.03);
+  border: 1px solid rgba(0,0,0,0.1);
+  border-radius: 10px;
+  color: #111;
+  font-size: 13px;
+  padding: 12px 14px;
+  outline: none;
+  width: 100%;
+  box-sizing: border-box;
+  font-family: inherit;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.sidebar-form input::placeholder { color: rgba(0,0,0,0.28); }
+
+.sidebar-form input:focus,
+.sidebar-form select:focus {
+  border-color: rgba(0,0,0,0.3);
+  box-shadow: 0 0 0 3px rgba(0,0,0,0.06);
+}
+
+.sidebar-form select option {
+  background: #fff;
+  color: #111;
+}
+
+.oc-btn-dark {
+  margin-top: 4px;
+  background: #111;
+  border: none;
+  border-radius: 10px;
+  color: #fff;
+  font-weight: 600;
+  font-size: 13px;
+  padding: 13px;
+  cursor: pointer;
+  letter-spacing: 0.03em;
+  transition: opacity 0.15s;
+  font-family: inherit;
+}
+.oc-btn-dark:hover { opacity: 0.75; }
+
+.sidebar-divider {
+  height: 1px;
+  background: rgba(0,0,0,0.06);
+  margin: 0 24px;
+}
+
+.sidebar-list {
+  padding: 20px 24px;
+  flex: 1;
+}
+
+.list-label {
+  font-size: 10px;
+  font-weight: 700;
+  color: rgba(0,0,0,0.3);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin-bottom: 14px;
+}
+
+/* ── Person row ─────────────────────────────────────────── */
+.person-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: rgba(0,0,0,0.025);
+  border-radius: 10px;
+  padding: 10px 12px;
+  border: 1px solid rgba(0,0,0,0.05);
+  margin-bottom: 7px;
+}
+
+.person-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.person-info { flex: 1; min-width: 0; }
+
+.person-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: #111;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.person-meta {
+  font-size: 11px;
+  color: rgba(0,0,0,0.4);
+  margin-top: 1px;
+}
+
+.btn-remove {
+  background: rgba(0,0,0,0.05);
+  border: 1px solid rgba(0,0,0,0.08);
+  color: #666;
+  border-radius: 6px;
+  width: 26px;
+  height: 26px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: background 0.15s;
+  font-family: inherit;
+}
+.btn-remove:hover { background: rgba(0,0,0,0.12); }
+
+/* ── Scrollbar ──────────────────────────────────────────── */
+#orgchart-sidebar::-webkit-scrollbar { width: 4px; }
+#orgchart-sidebar::-webkit-scrollbar-track { background: transparent; }
+#orgchart-sidebar::-webkit-scrollbar-thumb {
+  background: rgba(0,0,0,0.15);
+  border-radius: 4px;
+}

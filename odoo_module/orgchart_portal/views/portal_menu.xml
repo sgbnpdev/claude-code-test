@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+  <!-- Add "Org Chart" link to the website menu -->
+  <record id="menu_orgchart" model="website.menu">
+    <field name="name">Org Chart</field>
+    <field name="url">/orgchart</field>
+    <field name="parent_id" ref="website.main_menu"/>
+    <field name="sequence">60</field>
+  </record>
+
+</odoo>

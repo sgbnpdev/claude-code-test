@@ -1,0 +1,3 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_orgchart_person_public,orgchart.person public read,model_orgchart_person,,1,0,0,0
+access_orgchart_person_user,orgchart.person user,model_orgchart_person,base.group_user,1,1,1,1
