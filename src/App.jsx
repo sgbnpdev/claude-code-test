@@ -71,6 +71,14 @@ export default function App() {
     return () => window.removeEventListener('resize', fn)
   }, [])
 
+  // After the graph settles, position camera to face the tree front-on
+  useEffect(() => {
+    const t = setTimeout(() => {
+      fgRef.current?.cameraPosition({ x: 0, y: -60, z: 320 }, { x: 0, y: 0, z: 0 }, 1200)
+    }, 1800)
+    return () => clearTimeout(t)
+  }, [])
+
   const addPerson = () => {
     if (!form.name.trim() || !form.title.trim() || !form.team.trim()) return
     setPeople(prev => [...prev, { id: Date.now().toString(), ...form }])
@@ -142,6 +150,8 @@ export default function App() {
           linkWidth={0.8}
           linkOpacity={1}
           linkDirectionalParticles={0}
+          dagMode="td"
+          dagLevelDistance={70}
           onNodeClick={onNodeClick}
           nodeLabel={() => null}
           showNavInfo={false}
