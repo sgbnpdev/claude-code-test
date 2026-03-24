@@ -1,22 +1,39 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
-@import "tailwindcss";
-@variant dark (&:where(.dark, .dark *));
 
 * {
+  box-sizing: border-box;
   font-family: 'Inter', sans-serif;
 }
 
 body {
   margin: 0;
   padding: 0;
+  background: #05050f;
+  overflow: hidden;
 }
 
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(8px); }
-  to   { opacity: 1; transform: translateY(0); }
+input::placeholder {
+  color: rgba(255, 255, 255, 0.3);
 }
 
-.btn-fadein {
-  animation: fadeIn 0.4s ease forwards;
-  opacity: 0;
+input:focus, select:focus {
+  outline: none;
+  border-color: rgba(124, 58, 237, 0.6) !important;
+  box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.15);
+}
+
+select option {
+  background: #12121f;
+  color: #fff;
+}
+
+::-webkit-scrollbar {
+  width: 4px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(124, 58, 237, 0.4);
+  border-radius: 4px;
 }
