@@ -1,0 +1,268 @@
+<!-- ═══════════════════════════════════════════════════════════════
+     3D ORG CHART — paste this into Odoo Website Builder > Code block
+     Edit the PEOPLE array below to match your organisation.
+     ═══════════════════════════════════════════════════════════════ -->
+
+<style>
+#oc-wrap{display:flex;width:100%;height:90vh;overflow:hidden;background:#f7f7f5;font-family:Inter,-apple-system,sans-serif;border-radius:16px;position:relative}
+#oc-graph{position:relative;flex:1;min-width:0}
+#oc-header{position:absolute;top:0;left:0;right:0;display:flex;align-items:center;gap:12px;padding:18px 22px;pointer-events:none;background:linear-gradient(180deg,rgba(247,247,245,.96) 0%,transparent 100%);z-index:10}
+.oc-pill{background:rgba(0,0,0,.07);border-radius:40px;padding:5px 16px;display:flex;align-items:center;gap:6px;font-size:12px;font-weight:700;color:#111}
+.oc-meta{font-size:11px;color:rgba(0,0,0,.35);flex:1}
+.oc-toggle{pointer-events:all;cursor:pointer;background:rgba(0,0,0,.06);border:1px solid rgba(0,0,0,.1);color:#333;border-radius:20px;padding:6px 14px;font-size:11px;font-weight:600;font-family:inherit}
+.oc-toggle:hover{opacity:.7}
+#oc-legend{position:absolute;bottom:20px;left:20px;display:flex;flex-direction:column;gap:6px;background:rgba(255,255,255,.88);border-radius:12px;padding:12px 16px;border:1px solid rgba(0,0,0,.07);z-index:10}
+.oc-legend-hd{font-size:9px;font-weight:700;color:rgba(0,0,0,.3);letter-spacing:.12em;text-transform:uppercase;margin-bottom:2px}
+.oc-legend-row{display:flex;align-items:center;gap:7px;font-size:11px;color:rgba(0,0,0,.6);font-weight:500}
+.oc-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+#oc-sidebar{width:0;height:100%;overflow:hidden;background:rgba(255,255,255,.97);border-left:1px solid rgba(0,0,0,.07);display:flex;flex-direction:column;transition:width .25s ease}
+#oc-sidebar.open{width:320px;overflow-y:auto}
+.oc-sh{padding:22px 20px 0}
+.oc-sh h3{margin:0;font-size:15px;font-weight:700;color:#111}
+.oc-sh p{margin:4px 0 0;font-size:11px;color:rgba(0,0,0,.35)}
+.oc-form{padding:16px 20px;display:flex;flex-direction:column;gap:8px}
+.oc-form input,.oc-form select{background:rgba(0,0,0,.03);border:1px solid rgba(0,0,0,.1);border-radius:9px;color:#111;font-size:12px;padding:10px 12px;outline:none;width:100%;box-sizing:border-box;font-family:inherit}
+.oc-form input::placeholder{color:rgba(0,0,0,.28)}
+.oc-form input:focus,.oc-form select:focus{border-color:rgba(0,0,0,.3);box-shadow:0 0 0 3px rgba(0,0,0,.06)}
+.oc-form select option{background:#fff;color:#111}
+.oc-btn-add{background:#111;border:none;border-radius:9px;color:#fff;font-weight:600;font-size:12px;padding:11px;cursor:pointer;font-family:inherit;transition:opacity .15s}
+.oc-btn-add:hover{opacity:.75}
+.oc-divider{height:1px;background:rgba(0,0,0,.06);margin:0 20px}
+.oc-list{padding:16px 20px;flex:1}
+.oc-list-hd{font-size:9px;font-weight:700;color:rgba(0,0,0,.3);letter-spacing:.12em;text-transform:uppercase;margin-bottom:12px}
+.oc-row{display:flex;align-items:center;gap:10px;background:rgba(0,0,0,.025);border-radius:9px;padding:9px 10px;border:1px solid rgba(0,0,0,.05);margin-bottom:6px}
+.oc-row-info{flex:1;min-width:0}
+.oc-row-name{font-size:12px;font-weight:600;color:#111;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.oc-row-meta{font-size:10px;color:rgba(0,0,0,.4);margin-top:1px}
+.oc-rm{background:rgba(0,0,0,.05);border:1px solid rgba(0,0,0,.08);color:#666;border-radius:5px;width:24px;height:24px;cursor:pointer;font-size:13px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-family:inherit}
+.oc-rm:hover{background:rgba(0,0,0,.12)}
+#oc-sidebar::-webkit-scrollbar{width:3px}
+#oc-sidebar::-webkit-scrollbar-thumb{background:rgba(0,0,0,.15);border-radius:3px}
+</style>
+
+<div id="oc-wrap">
+
+  <div id="oc-graph">
+    <div id="oc-header">
+      <div class="oc-pill">
+        <svg width="16" height="16" viewBox="0 0 18 18" fill="none">
+          <circle cx="9" cy="9"  r="1.5" fill="#111"/>
+          <circle cx="9" cy="3"  r="1.5" fill="#111"/>
+          <circle cx="9" cy="15" r="1.5" fill="#111"/>
+          <circle cx="3" cy="9"  r="1.5" fill="#111"/>
+          <circle cx="15" cy="9" r="1.5" fill="#111"/>
+          <line x1="9" y1="3" x2="9" y2="15" stroke="#111" stroke-width="0.8"/>
+          <line x1="3" y1="9" x2="15" y2="9" stroke="#111" stroke-width="0.8"/>
+        </svg>
+        OrgChart
+      </div>
+      <span class="oc-meta" id="oc-meta-txt"></span>
+      <button class="oc-toggle" id="oc-toggle">Edit Chart</button>
+    </div>
+    <div id="oc-legend"></div>
+  </div>
+
+  <div id="oc-sidebar">
+    <div class="oc-sh">
+      <h3>Add Person</h3>
+      <p>Build your organisation chart</p>
+    </div>
+    <div class="oc-form">
+      <input id="oc-inp-name"    type="text" placeholder="Full name"/>
+      <input id="oc-inp-title"   type="text" placeholder="Job title"/>
+      <input id="oc-inp-team"    type="text" placeholder="Team / Department" list="oc-team-dl"/>
+      <datalist id="oc-team-dl"></datalist>
+      <select id="oc-inp-mgr"><option value="">No manager (top level)</option></select>
+      <button class="oc-btn-add" id="oc-btn-add">+ Add to Chart</button>
+    </div>
+    <div class="oc-divider"></div>
+    <div class="oc-list">
+      <div class="oc-list-hd">People (<span id="oc-pcount">0</span>)</div>
+      <div id="oc-people-list"></div>
+    </div>
+  </div>
+
+</div>
+
+<!-- CDN libraries (Three.js + 3d-force-graph) -->
+<script src="https://unpkg.com/three@0.158.0/build/three.min.js"></script>
+<script src="https://unpkg.com/three-spritetext@1.9.1/dist/three-spritetext.min.js"></script>
+<script src="https://unpkg.com/3d-force-graph@1.73.0/dist/3d-force-graph.min.js"></script>
+
+<script>
+(function(){
+'use strict';
+
+/* ── ✏️  EDIT YOUR PEOPLE HERE ─────────────────────────────────────
+   Each entry: { id, name, title, team, reportsTo (optional id) }   */
+var PEOPLE = [
+  { id:'1', name:'Alex Rivera',  title:'CEO',            team:'Leadership' },
+  { id:'2', name:'Sam Chen',     title:'CTO',            team:'Engineering', reportsTo:'1' },
+  { id:'3', name:'Jordan Lee',   title:'CMO',            team:'Marketing',   reportsTo:'1' },
+  { id:'4', name:'Taylor Kim',   title:'CFO',            team:'Finance',     reportsTo:'1' },
+  { id:'5', name:'Morgan Wu',    title:'VP Engineering', team:'Engineering', reportsTo:'2' },
+  { id:'6', name:'Casey Park',   title:'Lead Dev',       team:'Engineering', reportsTo:'5' },
+  { id:'7', name:'Riley Zhang',  title:'Developer',      team:'Engineering', reportsTo:'5' },
+  { id:'8', name:'Drew Santos',  title:'Marketing Dir',  team:'Marketing',   reportsTo:'3' },
+  { id:'9', name:'Quinn Patel',  title:'Content Lead',   team:'Marketing',   reportsTo:'8' },
+  { id:'10',name:'Avery Moore',  title:'Finance Lead',   team:'Finance',     reportsTo:'4' },
+];
+/* ──────────────────────────────────────────────────────────────── */
+
+var GRAYS = ['#111','#333','#555','#777','#444','#222','#666','#999'];
+var colorMap = {}, colorIdx = 0;
+function tc(team){
+  if(!colorMap[team]) colorMap[team] = GRAYS[colorIdx++ % GRAYS.length];
+  return colorMap[team];
+}
+
+function dotSphere(r, n, col){
+  var pos = new Float32Array(n*3);
+  for(var i=0;i<n;i++){
+    var th=Math.random()*Math.PI*2, ph=Math.acos(2*Math.random()-1);
+    pos[i*3]=r*Math.sin(ph)*Math.cos(th);
+    pos[i*3+1]=r*Math.sin(ph)*Math.sin(th);
+    pos[i*3+2]=r*Math.cos(ph);
+  }
+  var g=new THREE.BufferGeometry();
+  g.setAttribute('position',new THREE.BufferAttribute(pos,3));
+  return new THREE.Points(g,new THREE.PointsMaterial({color:col,size:.55,sizeAttenuation:true}));
+}
+
+function nodeObj(node){
+  var col=tc(node.team), grp=new THREE.Group();
+  grp.add(dotSphere(7,180,'#cccccc'));
+  grp.add(dotSphere(5,260,col));
+  var ns=new SpriteText(node.name);
+  ns.color='#111111'; ns.backgroundColor='rgba(0,0,0,0)';
+  ns.textHeight=3.2; ns.fontFace='Inter,sans-serif'; ns.fontWeight='600';
+  ns.position.y=-13; grp.add(ns);
+  var ts=new SpriteText(node.title);
+  ts.color='#888888'; ts.backgroundColor='rgba(0,0,0,0)';
+  ts.textHeight=2.5; ts.fontFace='Inter,sans-serif'; ts.fontWeight='400';
+  ts.position.y=-18; grp.add(ts);
+  return grp;
+}
+
+/* ── Build graph data from PEOPLE array ─── */
+function buildData(){
+  return {
+    nodes: PEOPLE.map(function(p){return{id:p.id,name:p.name,title:p.title,team:p.team};}),
+    links: PEOPLE.filter(function(p){return p.reportsTo;})
+                 .map(function(p){return{source:p.reportsTo,target:p.id};})
+  };
+}
+
+var graphData = buildData();
+PEOPLE.forEach(function(p){tc(p.team);}); // pre-seed colours
+
+/* ── Init ForceGraph3D ─── */
+var graphEl  = document.getElementById('oc-graph');
+var sidebar  = document.getElementById('oc-sidebar');
+
+function gw(){ return sidebar.classList.contains('open') ? graphEl.offsetWidth-320 : graphEl.offsetWidth; }
+function gh(){ return document.getElementById('oc-wrap').offsetHeight; }
+
+var Graph = ForceGraph3D()(graphEl)
+  .graphData(graphData)
+  .width(gw()).height(gh())
+  .backgroundColor('#f7f7f5')
+  .nodeThreeObject(nodeObj)
+  .nodeThreeObjectExtend(false)
+  .linkColor(function(){return 'rgba(0,0,0,0.12)';})
+  .linkWidth(.8).linkOpacity(1).linkDirectionalParticles(0)
+  .nodeLabel(function(){return null;})
+  .showNavInfo(false).enableNodeDrag(true)
+  .onNodeClick(function(node){
+    Graph.cameraPosition(
+      {x:node.x+80,y:node.y+30,z:node.z+80},
+      {x:node.x,y:node.y,z:node.z}, 900);
+  });
+
+window.addEventListener('resize',function(){Graph.width(gw()).height(gh());});
+
+/* ── Toggle sidebar ─── */
+document.getElementById('oc-toggle').addEventListener('click',function(){
+  var open=sidebar.classList.toggle('open');
+  this.textContent=open?'Close':'Edit Chart';
+  setTimeout(function(){Graph.width(gw());},260);
+});
+
+/* ── Rebuild UI ─── */
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
+function rebuildUI(){
+  var teams=[...new Set(PEOPLE.map(function(p){return p.team;}))].sort();
+
+  /* legend */
+  var lg=document.getElementById('oc-legend');
+  lg.innerHTML='<div class="oc-legend-hd">Teams</div>';
+  teams.forEach(function(t){
+    lg.innerHTML+='<div class="oc-legend-row"><span class="oc-dot" style="background:'+tc(t)+'"></span>'+esc(t)+'</div>';
+  });
+
+  /* team datalist */
+  var dl=document.getElementById('oc-team-dl');
+  dl.innerHTML='';
+  teams.forEach(function(t){var o=document.createElement('option');o.value=t;dl.appendChild(o);});
+
+  /* manager select */
+  var sel=document.getElementById('oc-inp-mgr');
+  var cur=sel.value;
+  sel.innerHTML='<option value="">No manager (top level)</option>';
+  PEOPLE.forEach(function(p){
+    var o=document.createElement('option');
+    o.value=p.id; o.textContent=p.name+' — '+p.title;
+    if(p.id===cur) o.selected=true;
+    sel.appendChild(o);
+  });
+
+  /* meta */
+  document.getElementById('oc-meta-txt').textContent=PEOPLE.length+' people · '+teams.length+' teams';
+  document.getElementById('oc-pcount').textContent=PEOPLE.length;
+
+  /* people list */
+  var list=document.getElementById('oc-people-list');
+  list.innerHTML='';
+  PEOPLE.forEach(function(p){
+    var row=document.createElement('div'); row.className='oc-row';
+    row.innerHTML='<span class="oc-dot" style="background:'+tc(p.team)+'"></span>'+
+      '<div class="oc-row-info"><div class="oc-row-name">'+esc(p.name)+'</div>'+
+      '<div class="oc-row-meta">'+esc(p.title)+' · '+esc(p.team)+'</div></div>'+
+      '<button class="oc-rm" data-id="'+p.id+'">×</button>';
+    list.appendChild(row);
+  });
+}
+
+rebuildUI();
+
+/* ── Add person ─── */
+document.getElementById('oc-btn-add').addEventListener('click',function(){
+  var name =document.getElementById('oc-inp-name').value.trim();
+  var title=document.getElementById('oc-inp-title').value.trim();
+  var team =document.getElementById('oc-inp-team').value.trim();
+  var mgr  =document.getElementById('oc-inp-mgr').value||null;
+  if(!name||!title||!team) return;
+  var id=String(Date.now());
+  PEOPLE.push({id:id,name:name,title:title,team:team,reportsTo:mgr||undefined});
+  graphData=buildData();
+  Graph.graphData(graphData);
+  rebuildUI();
+  document.getElementById('oc-inp-name').value='';
+  document.getElementById('oc-inp-title').value='';
+  document.getElementById('oc-inp-team').value='';
+  document.getElementById('oc-inp-mgr').value='';
+});
+
+/* ── Remove person ─── */
+document.getElementById('oc-people-list').addEventListener('click',function(e){
+  var btn=e.target.closest('.oc-rm'); if(!btn) return;
+  var id=btn.dataset.id;
+  PEOPLE=PEOPLE.filter(function(p){return p.id!==id&&p.reportsTo!==id;});
+  graphData=buildData();
+  Graph.graphData(graphData);
+  rebuildUI();
+});
+
+})();
+</script>
