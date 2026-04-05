@@ -5,6 +5,7 @@ on:
     branches:
       - main
       - claude/link-in-bio-page-oV1Pr
+      - claude/habit-tracking-app-lByl5
 
 concurrency:
   group: pages
