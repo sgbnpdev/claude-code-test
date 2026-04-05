@@ -86,3 +86,7 @@ select option {
 .tab-content {
   animation: fadeUp 0.18s ease-out;
 }
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
