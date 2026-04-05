@@ -1,1 +1,0 @@
-if('serviceWorker' in navigator) {window.addEventListener('load', () => {navigator.serviceWorker.register('/claude-code-test/sw.js', { scope: '/claude-code-test/' })})}
