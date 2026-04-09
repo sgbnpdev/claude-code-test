@@ -90,11 +90,19 @@ app.get('/api/responses', (req, res) => {
   try { res.json(JSON.parse(readFileSync(RESPONSES_FILE, 'utf8'))) } catch { res.json([]) }
 })
 
+// ── Serve built frontend in production ────────────────────────────────────────
+
+const DIST = join(__dirname, 'dist')
+if (existsSync(DIST)) {
+  app.use(express.static(DIST))
+  app.get('*', (req, res) => res.sendFile(join(DIST, 'index.html')))
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 
 const PORT = process.env.PORT || 3001
 app.listen(PORT, () => {
-  console.log(`\n  Survey API  →  http://localhost:${PORT}`)
+  console.log(`\n  Survey app  →  http://localhost:${PORT}`)
   if (!process.env.ANTHROPIC_API_KEY) {
     console.warn('  ⚠️  ANTHROPIC_API_KEY is not set — /api/chat will fail\n')
   } else {
