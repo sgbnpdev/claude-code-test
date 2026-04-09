@@ -1,343 +1,350 @@
-import { useState, useRef, useCallback, useEffect } from 'react'
-import ForceGraph3D from 'react-force-graph-3d'
-import * as THREE from 'three'
-import SpriteText from 'three-spritetext'
+import { useState, useRef, useEffect } from 'react'
 
-// Grayscale palette — each team gets a shade
-const TEAM_GRAYS = [
-  '#111111', '#333333', '#555555', '#777777',
-  '#444444', '#222222', '#666666', '#999999',
-]
+// ── Helpers ───────────────────────────────────────────────────────────────────
 
-const SAMPLE_NODES = [
-  { id: '1', name: 'Alex Rivera', title: 'CEO', team: 'Leadership' },
-  { id: '2', name: 'Sam Chen', title: 'CTO', team: 'Engineering', reportsTo: '1' },
-  { id: '3', name: 'Jordan Lee', title: 'CMO', team: 'Marketing', reportsTo: '1' },
-  { id: '4', name: 'Taylor Kim', title: 'CFO', team: 'Finance', reportsTo: '1' },
-  { id: '5', name: 'Morgan Wu', title: 'VP Engineering', team: 'Engineering', reportsTo: '2' },
-  { id: '6', name: 'Casey Park', title: 'Lead Dev', team: 'Engineering', reportsTo: '5' },
-  { id: '7', name: 'Riley Zhang', title: 'Developer', team: 'Engineering', reportsTo: '5' },
-  { id: '8', name: 'Drew Santos', title: 'Marketing Dir', team: 'Marketing', reportsTo: '3' },
-  { id: '9', name: 'Quinn Patel', title: 'Content Lead', team: 'Marketing', reportsTo: '8' },
-  { id: '10', name: 'Avery Moore', title: 'Finance Lead', team: 'Finance', reportsTo: '4' },
-]
-
-function buildTeamMap(nodes) {
-  const teams = [...new Set(nodes.map(n => n.team))].sort()
-  return new Map(teams.map((t, i) => [t, i]))
-}
-
-function teamColor(team, teamMap) {
-  return TEAM_GRAYS[(teamMap.get(team) ?? 0) % TEAM_GRAYS.length]
-}
-
-function buildGraph(nodes) {
-  const links = nodes
-    .filter(n => n.reportsTo)
-    .map(n => ({ source: n.reportsTo, target: n.id }))
-  return { nodes: nodes.map(n => ({ ...n })), links }
-}
-
-// Build a dot-sphere: random points scattered on a sphere surface
-function makeDotSphere(radius, count, color) {
-  const positions = new Float32Array(count * 3)
-  for (let i = 0; i < count; i++) {
-    const theta = Math.random() * Math.PI * 2
-    const phi = Math.acos(2 * Math.random() - 1)
-    positions[i * 3]     = radius * Math.sin(phi) * Math.cos(theta)
-    positions[i * 3 + 1] = radius * Math.sin(phi) * Math.sin(theta)
-    positions[i * 3 + 2] = radius * Math.cos(phi)
+function parseCompletion(content) {
+  const [before, after] = content.split('SURVEY_COMPLETE')
+  let data = null
+  if (after) {
+    const jsonStr = after.trim()
+    try { data = JSON.parse(jsonStr) } catch {}
   }
-  const geo = new THREE.BufferGeometry()
-  geo.setAttribute('position', new THREE.BufferAttribute(positions, 3))
-  const mat = new THREE.PointsMaterial({ color, size: 0.55, sizeAttenuation: true })
-  return new THREE.Points(geo, mat)
+  return { textBefore: before?.trim() || '', data }
 }
 
-export default function App() {
-  const [people, setPeople] = useState(SAMPLE_NODES)
-  const [form, setForm] = useState({ name: '', title: '', team: '', reportsTo: '' })
-  const [sidebarOpen, setSidebarOpen] = useState(true)
-  const [size, setSize] = useState({ w: window.innerWidth, h: window.innerHeight })
-  const fgRef = useRef()
+async function saveResponse(surveyData) {
+  try {
+    await fetch('/api/save', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ surveyData }),
+    })
+  } catch {}
+}
 
-  const teamMap = buildTeamMap(people)
-  const graphData = buildGraph(people)
-  const teams = [...new Set(people.map(p => p.team))].sort()
+// ── Sub-components ────────────────────────────────────────────────────────────
 
-  useEffect(() => {
-    const fn = () => setSize({ w: window.innerWidth, h: window.innerHeight })
-    window.addEventListener('resize', fn)
-    return () => window.removeEventListener('resize', fn)
-  }, [])
-
-  // After the graph settles, position camera to face the tree front-on
-  useEffect(() => {
-    const t = setTimeout(() => {
-      fgRef.current?.cameraPosition({ x: 0, y: -60, z: 320 }, { x: 0, y: 0, z: 0 }, 1200)
-    }, 1800)
-    return () => clearTimeout(t)
-  }, [])
-
-  const addPerson = () => {
-    if (!form.name.trim() || !form.title.trim() || !form.team.trim()) return
-    setPeople(prev => [...prev, { id: Date.now().toString(), ...form }])
-    setForm({ name: '', title: '', team: '', reportsTo: '' })
-  }
-
-  const removePerson = (id) => {
-    setPeople(prev => prev.filter(p => p.id !== id && p.reportsTo !== id))
-  }
-
-  const nodeObject = useCallback((node) => {
-    const color = teamColor(node.team, teamMap)
-    const group = new THREE.Group()
-
-    // Outer dot-sphere (sparse, light)
-    group.add(makeDotSphere(7, 180, '#cccccc'))
-    // Inner dot-sphere (dense, dark)
-    group.add(makeDotSphere(5, 260, color))
-
-    // Name label
-    const nameSprite = new SpriteText(node.name)
-    nameSprite.color = '#111111'
-    nameSprite.backgroundColor = 'rgba(255,255,255,0)'
-    nameSprite.textHeight = 3.2
-    nameSprite.fontFace = 'Inter, sans-serif'
-    nameSprite.fontWeight = '600'
-    nameSprite.position.y = -13
-    group.add(nameSprite)
-
-    // Title label
-    const titleSprite = new SpriteText(node.title)
-    titleSprite.color = '#888888'
-    titleSprite.backgroundColor = 'rgba(255,255,255,0)'
-    titleSprite.textHeight = 2.5
-    titleSprite.fontFace = 'Inter, sans-serif'
-    titleSprite.fontWeight = '400'
-    titleSprite.position.y = -18
-    group.add(titleSprite)
-
-    return group
-  }, [people.length, teamMap.size])
-
-  const linkCol = useCallback(() => 'rgba(0,0,0,0.12)', [])
-
-  const onNodeClick = useCallback((node) => {
-    fgRef.current?.cameraPosition(
-      { x: node.x + 80, y: node.y + 30, z: node.z + 80 },
-      { x: node.x, y: node.y, z: node.z },
-      900
-    )
-  }, [])
-
-  const graphW = sidebarOpen ? size.w - 340 : size.w
-
+function TypingIndicator() {
   return (
-    <div style={{ display: 'flex', width: '100vw', height: '100vh', overflow: 'hidden', background: '#f7f7f5' }}>
-
-      {/* 3D Graph */}
-      <div style={{ position: 'relative', flex: 1 }}>
-        <ForceGraph3D
-          ref={fgRef}
-          graphData={graphData}
-          width={graphW}
-          height={size.h}
-          backgroundColor="#f7f7f5"
-          nodeThreeObject={nodeObject}
-          nodeThreeObjectExtend={false}
-          linkColor={linkCol}
-          linkWidth={0.8}
-          linkOpacity={1}
-          linkDirectionalParticles={0}
-          dagMode="td"
-          dagLevelDistance={70}
-          onNodeClick={onNodeClick}
-          nodeLabel={() => null}
-          showNavInfo={false}
-          enableNodeDrag
-        />
-
-        {/* Header */}
-        <div style={{
-          position: 'absolute', top: 0, left: 0, right: 0,
-          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          padding: '22px 28px', pointerEvents: 'none',
-          background: 'linear-gradient(180deg, rgba(247,247,245,0.95) 0%, transparent 100%)',
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            {/* Logo pill — ark-robotics style */}
-            <div style={{
-              background: 'rgba(0,0,0,0.08)',
-              borderRadius: 40,
-              padding: '6px 18px',
-              display: 'flex', alignItems: 'center', gap: 6,
-            }}>
-              <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-                <circle cx="9" cy="9" r="1.5" fill="#111" />
-                <circle cx="9" cy="3" r="1.5" fill="#111" />
-                <circle cx="9" cy="15" r="1.5" fill="#111" />
-                <circle cx="3" cy="9" r="1.5" fill="#111" />
-                <circle cx="15" cy="9" r="1.5" fill="#111" />
-                <line x1="9" y1="3" x2="9" y2="15" stroke="#111" strokeWidth="0.8" />
-                <line x1="3" y1="9" x2="15" y2="9" stroke="#111" strokeWidth="0.8" />
-              </svg>
-              <span style={{ fontSize: 13, fontWeight: 700, color: '#111', letterSpacing: '0.02em' }}>OrgChart</span>
-            </div>
-            <div style={{ fontSize: 12, color: 'rgba(0,0,0,0.35)' }}>
-              {people.length} people · {teams.length} teams
-            </div>
-          </div>
-          <button
-            onClick={() => setSidebarOpen(o => !o)}
-            style={{
-              pointerEvents: 'all', cursor: 'pointer',
-              background: 'rgba(0,0,0,0.06)',
-              border: '1px solid rgba(0,0,0,0.1)',
-              color: '#333', borderRadius: 20, padding: '7px 16px',
-              fontSize: 12, fontWeight: 600, backdropFilter: 'blur(10px)',
-              letterSpacing: '0.02em',
-            }}
-          >
-            {sidebarOpen ? 'Close' : 'Edit Chart'}
-          </button>
-        </div>
-
-        {/* Team legend */}
-        <div style={{
-          position: 'absolute', bottom: 24, left: 24,
-          display: 'flex', flexDirection: 'column', gap: 7,
-          background: 'rgba(255,255,255,0.85)', borderRadius: 14,
-          padding: '14px 18px', backdropFilter: 'blur(12px)',
-          border: '1px solid rgba(0,0,0,0.07)',
-        }}>
-          <div style={{ fontSize: 10, fontWeight: 700, color: 'rgba(0,0,0,0.3)', letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 3 }}>Teams</div>
-          {teams.map(t => (
-            <div key={t} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <div style={{
-                width: 7, height: 7, borderRadius: '50%',
-                background: teamColor(t, teamMap),
-              }} />
-              <span style={{ fontSize: 12, color: 'rgba(0,0,0,0.65)', fontWeight: 500 }}>{t}</span>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Sidebar */}
-      {sidebarOpen && (
-        <div style={{
-          width: 340, height: '100vh',
-          background: 'rgba(255,255,255,0.95)',
-          borderLeft: '1px solid rgba(0,0,0,0.07)',
-          backdropFilter: 'blur(20px)',
-          display: 'flex', flexDirection: 'column',
-          fontFamily: 'Inter, sans-serif',
-          overflowY: 'auto',
-        }}>
-          {/* Sidebar header */}
-          <div style={{ padding: '28px 24px 0' }}>
-            <div style={{ fontSize: 17, fontWeight: 700, color: '#111' }}>Add Person</div>
-            <div style={{ fontSize: 12, color: 'rgba(0,0,0,0.35)', marginTop: 4 }}>Build your organization chart</div>
-          </div>
-
-          {/* Form */}
-          <div style={{ padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: 10 }}>
-            {[
-              { key: 'name', placeholder: 'Full name' },
-              { key: 'title', placeholder: 'Job title' },
-              { key: 'team', placeholder: 'Team / Department', list: 'team-list' },
-            ].map(({ key, placeholder, list }) => (
-              <input
-                key={key}
-                list={list}
-                placeholder={placeholder}
-                value={form[key]}
-                onChange={e => setForm(f => ({ ...f, [key]: e.target.value }))}
-                style={inputStyle}
-              />
-            ))}
-
-            <datalist id="team-list">
-              {teams.map(t => <option key={t} value={t} />)}
-            </datalist>
-
-            <select
-              value={form.reportsTo}
-              onChange={e => setForm(f => ({ ...f, reportsTo: e.target.value }))}
-              style={{ ...inputStyle, color: form.reportsTo ? '#111' : 'rgba(0,0,0,0.3)' }}
-            >
-              <option value="">No manager (top level)</option>
-              {people.map(p => (
-                <option key={p.id} value={p.id}>{p.name} — {p.title}</option>
-              ))}
-            </select>
-
-            <button
-              onClick={addPerson}
-              style={{
-                marginTop: 4,
-                background: '#111111',
-                border: 'none', borderRadius: 10, color: '#fff',
-                fontWeight: 600, fontSize: 13, padding: '13px',
-                cursor: 'pointer', letterSpacing: '0.03em',
-                transition: 'opacity 0.15s',
-              }}
-              onMouseEnter={e => e.target.style.opacity = '0.75'}
-              onMouseLeave={e => e.target.style.opacity = '1'}
-            >
-              + Add to Chart
-            </button>
-          </div>
-
-          {/* Divider */}
-          <div style={{ height: 1, background: 'rgba(0,0,0,0.06)', margin: '0 24px' }} />
-
-          {/* People list */}
-          <div style={{ padding: '20px 24px', flex: 1 }}>
-            <div style={{ fontSize: 10, fontWeight: 700, color: 'rgba(0,0,0,0.3)', letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 14 }}>
-              People ({people.length})
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
-              {people.map(p => (
-                <div key={p.id} style={{
-                  display: 'flex', alignItems: 'center', gap: 12,
-                  background: 'rgba(0,0,0,0.025)', borderRadius: 10,
-                  padding: '10px 12px', border: '1px solid rgba(0,0,0,0.05)',
-                }}>
-                  <div style={{
-                    width: 8, height: 8, borderRadius: '50%', flexShrink: 0,
-                    background: teamColor(p.team, teamMap),
-                  }} />
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 13, fontWeight: 600, color: '#111', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.name}</div>
-                    <div style={{ fontSize: 11, color: 'rgba(0,0,0,0.4)', marginTop: 1 }}>{p.title} · {p.team}</div>
-                  </div>
-                  <button
-                    onClick={() => removePerson(p.id)}
-                    style={{
-                      background: 'rgba(0,0,0,0.05)', border: '1px solid rgba(0,0,0,0.08)',
-                      color: '#666', borderRadius: 6, width: 26, height: 26,
-                      cursor: 'pointer', fontSize: 14, fontWeight: 700,
-                      display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-                    }}
-                  >×</button>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
+    <div style={S.typingDots}>
+      <span className="dot" /><span className="dot" /><span className="dot" />
     </div>
   )
 }
 
-const inputStyle = {
-  background: 'rgba(0,0,0,0.03)',
-  border: '1px solid rgba(0,0,0,0.1)',
-  borderRadius: 10, color: '#111',
-  fontSize: 13, padding: '12px 14px',
-  outline: 'none', width: '100%',
-  boxSizing: 'border-box',
-  fontFamily: 'Inter, sans-serif',
+function Message({ role, content }) {
+  const isUser = role === 'user'
+  return (
+    <div style={{ ...S.row, justifyContent: isUser ? 'flex-end' : 'flex-start' }}>
+      {!isUser && <div style={S.avatar}>AI</div>}
+      <div style={{ ...S.bubble, ...(isUser ? S.userBubble : S.botBubble) }}>
+        {content}
+      </div>
+    </div>
+  )
+}
+
+// ── Screens ───────────────────────────────────────────────────────────────────
+
+function LandingScreen({ onStart }) {
+  return (
+    <div style={S.center}>
+      <div style={S.card}>
+        <div style={S.logoMark}>
+          <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+            <circle cx="16" cy="16" r="13" stroke="#111" strokeWidth="2" />
+            <circle cx="16" cy="10" r="2.5" fill="#111" />
+            <circle cx="16" cy="16" r="2.5" fill="#111" />
+            <circle cx="16" cy="22" r="2.5" fill="#111" />
+          </svg>
+        </div>
+        <h1 style={S.landingTitle}>AI Usage Survey</h1>
+        <p style={S.landingDesc}>
+          We want to understand how our team already uses AI tools — and whether
+          Claude could be useful for you.
+        </p>
+        <p style={S.landingNote}>
+          This is a short chat, not a form. Just answer naturally.&nbsp;
+          <span style={{ color: 'rgba(0,0,0,0.4)' }}>~5 minutes</span>
+        </p>
+        <button style={S.startBtn} onClick={onStart}>
+          Start conversation
+        </button>
+      </div>
+    </div>
+  )
+}
+
+function CompletionScreen({ result }) {
+  return (
+    <div style={S.center}>
+      <div style={S.card}>
+        <div style={S.checkCircle}>✓</div>
+        <h2 style={S.completionTitle}>Thanks for sharing!</h2>
+        <p style={S.completionSub}>Your responses have been recorded.</p>
+        {result?.summary && (
+          <div style={S.summaryBox}>
+            <div style={S.summaryLabel}>Your summary</div>
+            <p style={S.summaryText}>{result.summary}</p>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
+// ── Main App ──────────────────────────────────────────────────────────────────
+
+export default function App() {
+  const [phase, setPhase] = useState('landing') // 'landing' | 'chat' | 'done'
+  const [messages, setMessages] = useState([])
+  const [input, setInput] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [surveyResult, setSurveyResult] = useState(null)
+  const bottomRef = useRef(null)
+
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [messages, loading])
+
+  const callClaude = async (history) => {
+    const res = await fetch('/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ messages: history }),
+    })
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}))
+      throw new Error(err.error || 'Server error')
+    }
+    return (await res.json()).content
+  }
+
+  const handleCompletion = async (content, history) => {
+    const { textBefore, data } = parseCompletion(content)
+    if (textBefore) {
+      setMessages([...history, { role: 'assistant', content: textBefore }])
+    }
+    if (data) {
+      await saveResponse(data)
+      setSurveyResult(data)
+    }
+    setPhase('done')
+  }
+
+  const startSurvey = async () => {
+    setPhase('chat')
+    setLoading(true)
+    try {
+      const content = await callClaude([])
+      if (content.includes('SURVEY_COMPLETE')) {
+        await handleCompletion(content, [])
+      } else {
+        setMessages([{ role: 'assistant', content }])
+      }
+    } catch (e) {
+      setMessages([{ role: 'assistant', content: `⚠️ ${e.message}` }])
+    }
+    setLoading(false)
+  }
+
+  const sendMessage = async () => {
+    if (!input.trim() || loading) return
+    const userMsg = { role: 'user', content: input.trim() }
+    const history = [...messages, userMsg]
+    setMessages(history)
+    setInput('')
+    setLoading(true)
+    try {
+      const content = await callClaude(history)
+      if (content.includes('SURVEY_COMPLETE')) {
+        await handleCompletion(content, history)
+      } else {
+        setMessages([...history, { role: 'assistant', content }])
+      }
+    } catch (e) {
+      setMessages([...history, { role: 'assistant', content: `⚠️ ${e.message}` }])
+    }
+    setLoading(false)
+  }
+
+  const onKeyDown = (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault()
+      sendMessage()
+    }
+  }
+
+  const onInput = (e) => {
+    // Auto-grow textarea
+    e.target.style.height = 'auto'
+    e.target.style.height = Math.min(e.target.scrollHeight, 140) + 'px'
+    setInput(e.target.value)
+  }
+
+  if (phase === 'landing') return <LandingScreen onStart={startSurvey} />
+  if (phase === 'done')    return <CompletionScreen result={surveyResult} />
+
+  return (
+    <div style={S.chatShell}>
+      {/* Header */}
+      <div style={S.header}>
+        <div style={S.avatar} style={{ ...S.avatar, width: 34, height: 34, fontSize: 11 }}>AI</div>
+        <div>
+          <div style={S.headerName}>AI Survey Assistant</div>
+          <div style={S.headerStatus}>
+            <span style={S.statusDot} />
+            Online
+          </div>
+        </div>
+      </div>
+
+      {/* Messages */}
+      <div style={S.messagesArea}>
+        {messages.map((m, i) => <Message key={i} role={m.role} content={m.content} />)}
+        {loading && (
+          <div style={{ ...S.row, justifyContent: 'flex-start' }}>
+            <div style={S.avatar}>AI</div>
+            <div style={{ ...S.bubble, ...S.botBubble }}>
+              <TypingIndicator />
+            </div>
+          </div>
+        )}
+        <div ref={bottomRef} />
+      </div>
+
+      {/* Input */}
+      <div style={S.inputBar}>
+        <div style={S.inputInner}>
+          <textarea
+            style={S.textarea}
+            value={input}
+            onChange={onInput}
+            onKeyDown={onKeyDown}
+            placeholder="Type your message…"
+            rows={1}
+            disabled={loading}
+          />
+          <button
+            style={{ ...S.sendBtn, opacity: input.trim() && !loading ? 1 : 0.35 }}
+            onClick={sendMessage}
+            disabled={!input.trim() || loading}
+          >
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+              <path d="M2 8h12M14 8L9 3M14 8L9 13" stroke="white" strokeWidth="1.8"
+                strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </button>
+        </div>
+        <div style={S.hint}>Enter to send &nbsp;·&nbsp; Shift+Enter for new line</div>
+      </div>
+    </div>
+  )
+}
+
+// ── Styles ────────────────────────────────────────────────────────────────────
+
+const S = {
+  // Layout
+  center: {
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
+    minHeight: '100vh', background: '#f7f7f5', padding: 24,
+  },
+  card: {
+    background: '#fff', borderRadius: 20, padding: '48px 44px',
+    boxShadow: '0 2px 24px rgba(0,0,0,0.07)', maxWidth: 480, width: '100%',
+    display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center',
+  },
+  chatShell: {
+    display: 'flex', flexDirection: 'column', height: '100vh',
+    background: '#f7f7f5', fontFamily: 'Inter, sans-serif',
+  },
+
+  // Landing
+  logoMark: { marginBottom: 24 },
+  landingTitle: { fontSize: 26, fontWeight: 800, color: '#111', margin: '0 0 14px' },
+  landingDesc: { fontSize: 15, color: 'rgba(0,0,0,0.55)', lineHeight: 1.6, margin: '0 0 10px' },
+  landingNote: { fontSize: 13, color: 'rgba(0,0,0,0.45)', margin: '0 0 32px' },
+  startBtn: {
+    background: '#111', color: '#fff', border: 'none', borderRadius: 12,
+    padding: '14px 40px', fontSize: 14, fontWeight: 600, cursor: 'pointer',
+    letterSpacing: '0.02em',
+  },
+
+  // Completion
+  checkCircle: {
+    width: 56, height: 56, borderRadius: '50%', background: '#111',
+    color: '#fff', fontSize: 24, display: 'flex', alignItems: 'center',
+    justifyContent: 'center', marginBottom: 20,
+  },
+  completionTitle: { fontSize: 22, fontWeight: 700, color: '#111', margin: '0 0 8px' },
+  completionSub: { fontSize: 14, color: 'rgba(0,0,0,0.45)', margin: '0 0 24px' },
+  summaryBox: {
+    background: '#f7f7f5', borderRadius: 12, padding: '16px 20px',
+    width: '100%', textAlign: 'left',
+  },
+  summaryLabel: { fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', color: 'rgba(0,0,0,0.3)', textTransform: 'uppercase', marginBottom: 8 },
+  summaryText: { fontSize: 14, color: 'rgba(0,0,0,0.7)', lineHeight: 1.6, margin: 0 },
+
+  // Header
+  header: {
+    display: 'flex', alignItems: 'center', gap: 12,
+    padding: '16px 24px', background: '#fff',
+    borderBottom: '1px solid rgba(0,0,0,0.07)',
+    boxShadow: '0 1px 8px rgba(0,0,0,0.04)',
+  },
+  headerName: { fontSize: 14, fontWeight: 600, color: '#111' },
+  headerStatus: { display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, color: 'rgba(0,0,0,0.4)' },
+  statusDot: { width: 6, height: 6, borderRadius: '50%', background: '#22c55e', display: 'inline-block' },
+
+  // Messages
+  messagesArea: {
+    flex: 1, overflowY: 'auto', padding: '24px 0',
+    display: 'flex', flexDirection: 'column', gap: 4,
+  },
+  row: { display: 'flex', alignItems: 'flex-end', gap: 10, padding: '4px 24px' },
+  avatar: {
+    width: 32, height: 32, borderRadius: '50%',
+    background: '#111', color: '#fff', fontSize: 10, fontWeight: 700,
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
+    flexShrink: 0,
+  },
+  bubble: {
+    maxWidth: 'min(520px, 72%)', padding: '12px 16px',
+    borderRadius: 18, fontSize: 14, lineHeight: 1.6,
+    whiteSpace: 'pre-wrap', wordBreak: 'break-word',
+  },
+  botBubble: {
+    background: '#fff', color: '#111',
+    border: '1px solid rgba(0,0,0,0.08)',
+    borderBottomLeftRadius: 4,
+    boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
+  },
+  userBubble: {
+    background: '#111', color: '#fff',
+    borderBottomRightRadius: 4,
+  },
+
+  // Typing dots
+  typingDots: { display: 'flex', gap: 5, padding: '2px 4px' },
+
+  // Input bar
+  inputBar: {
+    background: '#fff', borderTop: '1px solid rgba(0,0,0,0.07)',
+    padding: '16px 24px 20px',
+  },
+  inputInner: { display: 'flex', gap: 10, alignItems: 'flex-end' },
+  textarea: {
+    flex: 1, border: '1px solid rgba(0,0,0,0.12)', borderRadius: 14,
+    padding: '11px 16px', fontSize: 14, fontFamily: 'Inter, sans-serif',
+    resize: 'none', outline: 'none', color: '#111', background: '#fafafa',
+    lineHeight: 1.5, minHeight: 44, maxHeight: 140,
+  },
+  sendBtn: {
+    width: 44, height: 44, borderRadius: 12, background: '#111',
+    border: 'none', cursor: 'pointer', flexShrink: 0,
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
+    transition: 'opacity 0.15s',
+  },
+  hint: { fontSize: 11, color: 'rgba(0,0,0,0.28)', marginTop: 8, textAlign: 'center' },
 }
