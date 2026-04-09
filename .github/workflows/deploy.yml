@@ -1,41 +1,20 @@
-name: Deploy to GitHub Pages
+name: Deploy to Railway
 
 on:
   push:
     branches:
-      - main
-      - claude/link-in-bio-page-oV1Pr
-
-concurrency:
-  group: pages
-  cancel-in-progress: true
+      - claude/employee-ai-survey-chatbot-Q6u6U
 
 jobs:
-  build:
+  deploy:
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: npm
-      - run: npm ci
-      - run: npm run build
-      - uses: actions/upload-pages-artifact@v3
-        with:
-          path: dist
 
-  deploy:
-    needs: build
-    runs-on: ubuntu-latest
-    permissions:
-      pages: write
-      id-token: write
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    steps:
-      - uses: actions/deploy-pages@v4
-        id: deployment
+      - name: Install Railway CLI
+        run: curl -fsSL https://raw.githubusercontent.com/railwayapp/cli/master/install.sh | bash
+
+      - name: Deploy
+        run: railway up --detach
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
